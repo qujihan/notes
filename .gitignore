@@ -1,0 +1,19 @@
+# C/C++
+cpp/*/bin/
+cpp/*/build/
+cpp/*/.cache/
+cpp/bin/
+cpp/build/
+cpp/.cache/
+
+# Golang
+
+# Rust
+rust/build/
+rust/target/
+rust/*/build/
+rust/*/target/
+
+# Mac
+.DS_Store
+*/.DS_Store
