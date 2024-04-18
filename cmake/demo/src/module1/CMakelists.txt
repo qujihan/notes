@@ -1,0 +1,15 @@
+project(module1)
+
+aux_source_directory(${MODULE1_SRC_DIR} MODULE1_FILE)
+
+add_library(${PROJECT_NAME} 
+STATIC 
+${MODULE1_FILE}
+)
+
+target_include_directories(${PROJECT_NAME} 
+PUBLIC
+${MODULE1_H_DIR}
+)
+
+message(STATUS "Module1 name: ${PROJECT_NAME}")

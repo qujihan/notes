@@ -1,0 +1,19 @@
+project(module3)
+
+aux_source_directory(${MODULE3_SRC_DIR} MODULE3_FILE)
+
+add_library(${PROJECT_NAME} 
+STATIC
+${MODULE3_FILE}
+)
+
+target_include_directories(${PROJECT_NAME} 
+PUBLIC
+${MODULE3_H_DIR}
+)
+
+target_link_libraries(${PROJECT_NAME}
+PUBLIC
+module1
+module2
+)

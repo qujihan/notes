@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.21)
+
+project(demo_cmake
+    VERSION 0.0.1
+    DESCRIPTION "A simple CMake Template"
+    HOMEPAGE_URL "github.com/qujihan/DemoCMake"
+    LANGUAGES CXX
+)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+set(CMAKE_BUILD_TYPE debug)
+set(CMAKE_EXPORT_COMPILE_COMMANDS true)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+
+include_directories(${PROJECT_SOURCE_DIR}/src/include)
+
+add_subdirectory(third_party)
+add_subdirectory(src)

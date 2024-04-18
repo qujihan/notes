@@ -1,0 +1,30 @@
+project(main)
+
+set(MODULE1_SRC_DIR ${PROJECT_SOURCE_DIR}/module1)
+set(MODULE1_H_DIR ${PROJECT_SOURCE_DIR}/include/module1)
+
+set(MODULE2_SRC_DIR ${PROJECT_SOURCE_DIR}/module2)
+set(MODULE2_H_DIR ${PROJECT_SOURCE_DIR}/include/module2)
+
+set(MODULE3_SRC_DIR ${PROJECT_SOURCE_DIR}/module3)
+set(MODULE3_H_DIR ${PROJECT_SOURCE_DIR}/include/module3)
+
+set(MODULE4_SRC_DIR ${PROJECT_SOURCE_DIR}/module4)
+set(MODULE4_H_DIR ${PROJECT_SOURCE_DIR}/include/module4)
+
+add_subdirectory(module1)
+add_subdirectory(module2)
+add_subdirectory(module3)
+add_subdirectory(module4)
+
+add_executable(${PROJECT_NAME} main.cpp)
+
+target_link_libraries(${PROJECT_NAME}
+PUBLIC
+module1
+module2
+module3
+module4
+)
+
+
