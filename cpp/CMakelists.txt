@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.21)
+
+project(modern_cpp
+    VERSION 0.0.1
+    DESCRIPTION "Study Effective Modern C++"
+    LANGUAGES CXX
+)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_BUILD_TYPE debug)
+set(CMAKE_EXPORT_COMPILE_COMMANDS true)
+
+# 禁止返回值优化 RVO(Return Value Optimization)
+set(CMAKE_CXX_FLAGS -fno-elide-constructors)
+
+include_directories(${PROJECT_SOURCE_DIR}/src/include)
+add_subdirectory(src)

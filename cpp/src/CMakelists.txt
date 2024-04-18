@@ -1,0 +1,38 @@
+project(main)
+add_executable(${PROJECT_NAME} main.cpp)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+if(NOT ${ONLY_BUILD} STREQUAL "")
+    if ("${ONLY_BUILD}" MATCHES "^item")
+        add_executable(${ONLY_BUILD} ${PROJECT_SOURCE_DIR}/item/${ONLY_BUILD}.cc)
+    elseif ("${ONLY_BUILD}" MATCHES "^base")
+        add_executable(${ONLY_BUILD} ${PROJECT_SOURCE_DIR}/base/${ONLY_BUILD}.cc)
+    else()
+        message(STATUS "Does not start with 'item' or 'base'.")
+    endif()
+else()
+    file(GLOB ITEM_FILES ${PROJECT_SOURCE_DIR}/item/*.cc)
+    foreach(ITEM_FILE ${ITEM_FILES})
+        get_filename_component(ITEM_NUM ${ITEM_FILE} NAME_WE)
+        add_executable(${ITEM_NUM} ${ITEM_FILE})
+    endforeach()
+
+    file(GLOB BASE_FILES ${PROJECT_SOURCE_DIR}/base/*.cc)
+    foreach(BASE_FILE ${BASE_FILES})
+        get_filename_component(BASE_NUM ${BASE_FILE} NAME_WE)
+        add_executable(${BASE_NUM} ${BASE_FILE})
+    endforeach()
+endif()
+
+# base2 需要关闭返回值优化
+if(TARGET base2)
+    target_compile_options(base2 PRIVATE -fno-elide-constructors)
+    set_target_properties(base2 PROPERTIES CXX_STANDARD 14)
+endif()
+
+# item7 需要关闭返回值优化
+# 因为为了演示 ()初始化 比 {}初始化 多了一次拷贝构造
+if(TARGET item7)
+    target_compile_options(item7 PRIVATE -fno-elide-constructors)
+    set_target_properties(item7 PROPERTIES CXX_STANDARD 14)
+endif()
