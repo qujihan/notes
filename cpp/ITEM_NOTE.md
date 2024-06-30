@@ -83,7 +83,7 @@ decltype(auto) func(){
 
 
 
-## 条款 6: auto推导若非己愿，使用显式类型初始化惯用法
+## 条款 6: auto推导若非己愿,使用显式类型初始化惯用法
 - 不可见的代理类会使得 auto 出来的结果并非己愿
 - 那么需要自己显式转换
 
@@ -242,9 +242,153 @@ final 关键字
 ## 条款 18: 对于独占资源使用std::unique_ptr
 代码中有case
 ## 条款 19: 对于共享资源使用std::shared_ptr
-## 条款 20:
-## 条款 21:
-## 条款 22:
+stared_ptr 有两个指针
+- 一个指向 应该的对象
+- 一个指向 cotrol block
+  - refercnce count
+  - weak count
+  - ...
+
+
+- shared_ptr 的性能问题
+  - 大小是原始指针的两倍
+  - 引用计数内存必须是动态分配的
+  - 引用计数的改变是原子操作
+
+- cotrol block 的生成时机
+  - 使用 make_shared
+  - 通过 unique_ptr 构造 shared_ptr
+  - 向 shared_ptr 构造函数中传一个裸指针
+
+- shared_ptr 可能存在的问题
+理论上, 一个对象 一定 对应的一个 control block. 如果不是这个样子, 可能会造成 double free 问题, 那么在什么情况下会发生 一个对象 不是对应一个 control blcok 的情况呢
+
+- double free: case1 用裸指针多次构造 shared_ptr
+```c++
+class A {
+public:
+    A() { std::cout << "A()" << std::endl; }
+    ~A() { std::cout << "~A()" << std::endl; }
+};
+
+void case1() {
+    {
+        auto p = new A();
+        std::shared_ptr<A> q(p);
+        std::shared_ptr<A> r(p);
+    }
+    std::cout << "double free" << std::endl;
+}
+```
+
+- double free: case2
+```c++
+class Widget;
+std::vector<std::shared_ptr<Widget>> processedWidgets;
+
+// 会 double free 的情况
+class Widget {
+public:
+    // emplace_back 会调用构造函数, 会创建一个 control block
+    void process() { processedWidgets.emplace_back(this); }
+};
+
+// 正确的写法 (CRTP: 奇异递归模板模式)
+class Widget : public std::enable_shared_from_this<Widget> {
+public:
+    void process() { processedWidgets.emplace_back(shared_from_this()); }
+};
+
+// 最完美的写法
+// 主要是避免了在栈上创建对象 
+// Widget w; // 这个被delete了
+// 在栈上分配再传给 shared_ptr 一定会出错
+class Widget : public std::enable_shared_from_this<Widget> {
+public:
+    Widget() = delete;
+    template <typename... T>
+    static std::shared_ptr<Widget> create(T&&... args) {
+        return std::shared_ptr<Widget>(new Widget(std::forward<T>(args)...));
+    }
+    void process() { processedWidgets.emplace_back(shared_from_this()); }
+};
+
+auto case1() {
+    {
+        // make_shared 会创建一个 control block
+        auto pw = std::make_shared<Widget>();
+        pw->process();
+    }
+}
+```
+
+## 条款 20: 当std::shared_ptr可能悬空时使用std::weak_ptr
+
+- std::weak_ptr 不能单独使用, 通常从 std::shared_ptr 上创建
+```cpp
+class Widget {
+public:
+    Widget() { std::cout << "Widget()" << std::endl; }
+    ~Widget() { std::cout << "~Widget()" << std::endl; }
+};
+auto case1() {
+    // rc = 1
+    auto shared_p = std::make_shared<Widget>();
+    std::weak_ptr<Widget> weak_p(shared_p);
+    // rc = 0, Widget对象被销毁
+    shared_p = nullptr;
+}
+
+auto case2() {
+    // rc = 1
+    auto shared_p = std::make_shared<Widget>();
+    std::weak_ptr<Widget> weak_p(shared_p);
+    // rc++, rc = 2
+    auto shared_p2 = weak_p.lock();
+    // rc--, rc = 1
+    shared_p = nullptr;
+    std::cout << "count : " << shared_p2.use_count() << std::endl;
+}
+```
+- std::weak_ptr 的作用: 监视者
+
+## 条款 21: 优先考虑使用std::make_unique和std::make_shared, 而非直接使用new
+- 减少代码重复
+- 使用 make_xxx 更安全
+```c++
+class Widget {};
+void processWidget(std::shared_ptr<Widget> p, int priority);
+int get_priority() {
+    // do something
+    // may throw exception
+    return 1;
+}
+
+auto case1() {
+    // get_priority()返回值可能抛出异常, 但是Widget对象已经创建, 会造成内存泄漏
+    processWidget(std::shared_ptr<Widget>(new Widget), get_priority());
+    // 使用std::make_shared可以避免这个问题
+    processWidget(std::make_shared<Widget>(), get_priority());
+}
+```
+- make_xxx 比 new 有效率上的提升
+  - 使用 new 会申请两次内存, 而且内存地区不够紧凑
+  - make_shared 一次申请, 效率比较高
+  - make_unique 其实没啥区别
+- make_xxx 的局限性
+  - 使用自定义的删除器只能使用 new
+  - 无法通过{}初始化指向的对象(原因:{}无法完美转化(item30))
+  - 在shared_ptr中, 如果类重载了 new / delete, 使用 make_shared 不会执行重载的函数, 但是使用 `shared_ptr<Test>(new Test())` 就是可以的(还有 std::allocated_shared 也可以)
+  - 使用 make_shared, T object以及control block 会一起申请, 也会一起释放
+
+
+针对一起申请一起释放的例子
+```c++
+auto share = std::make_shared<Widget>();
+std::weak_ptr<Widget> weak(share);
+share = nullptr; // <- 执行到这里的时候, share 指向的对象会执行析构, 但是内存并没有free, 要等到 weak 销毁以后, 一起释放掉
+```
+## 条款 22: 当使用Pimpl惯用法，请在实现文件中定义特殊成员函数
 # 右值引用 / 移动语义 / 完美转发
 ## 条款 23: 理解 std::move 以及 std::forword
 - std::move 执行到右值的无条件转换, 但是并没有移动任何东西
