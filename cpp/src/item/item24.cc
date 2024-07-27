@@ -1,3 +1,5 @@
 #include "utils/util.h"
 
-int main(){}
+int main() {
+    util::title("区分通用引用与右值引用");
+}

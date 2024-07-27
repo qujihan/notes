@@ -395,18 +395,54 @@ share = nullptr; // <- 执行到这里的时候, share 指向的对象会执行�
 - std::forward 只有在参数绑定为右值的时候, 才会转换成右值
 - std::move 和 std::forward 在运行期什么都没有做
 
-## 条款 24:
-## 条款 25:
+## 条款 24: 区分通用引用与右值引用
+- 模板的通用引用: 要求: T&& + 类型推导
+- 可变参数模板的通用引用: 要求: Args&&... + 类型推导 
+- auto的通用引用: 要求: auto&& / auto&&... + 类型推导
+## 条款 25: 对右值引用使用std::move, 对通用引用使用std::forward
 ## 条款 26:
 ## 条款 27:
 ## 条款 28:
 ## 条款 29:
 ## 条款 30:
-## 条款 31:
 # Lambda
-## 条款 32:
-## 条款 33:
-## 条款 34:
+## 条款 31: 避免使用默认捕获
+- 默认按引用捕获的局部变量需要考虑其生命周期
+```c++
+// 此时需要考虑 divisor 的生命周期,
+auto addDivisorFilter() {
+    using FilterContainer = std::vector<std::function<bool(int)>>;
+    FilterContainer filters;
+    int divisor = 3;
+    filters.emplace_back([&](int val) { return val % divisor == 0; });
+}
+```
+- 默认按值捕获类内属性需要考虑this指针引发的问题
+  - 捕获列表只能捕获到 非静态局部变量
+    - [=] 不能捕获到 divisor 的值, 所以 [divisor](){...} 这样是无法通过编译的
+  - [=] 实际上是捕获了 this 指针
+```c++
+class Widget {
+    using FilterContainer = std::vector<std::function<bool(int)>>;
+public:
+    void addFilter() {
+        // 此时捕获了this指针, 如果Widget对象析构了, 会导致this的空指针
+        filters.emplace_back([=](int val) { return val % divisor == 0; });
+
+        // 这样会报错, 'divisor' in capture list does not name a variable
+        // filters.emplace_back([divisor](int val) { return val % divisor == 0; });
+
+        // after c++14 可以这么写, 这样不会捕获 this 指针
+        filters.emplace_back([divisor = divisor](int val) { return val % divisor == 0; });
+    }
+private:
+    FilterContainer filters;
+    int divisor;
+};
+```
+## 条款 32: 使用初始值捕获来移动对象到闭包中
+## 条款 33: 对于 std::forward 的 auto&& 形参使用 decltype
+## 条款 34: 考虑lambda而非std::bind
 # 并发
 ## 条款 35:
 ## 条款 36:
