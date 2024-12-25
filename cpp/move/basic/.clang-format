@@ -1,6 +1,0 @@
----
-language: cpp
-basedonstyle: google
-pointeralignment: left
-derivepointeralignment: false
-...
