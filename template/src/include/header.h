@@ -1,3 +1,5 @@
-inline int add(int a, int b){
+#include <string>
+
+inline auto add(int a, int b) -> int {
     return a + b;
 }

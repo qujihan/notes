@@ -1,6 +1,6 @@
 .PHONY: all cmake build clean 
 
-all: cmake build
+all: cmake build run
 
 cmake:
 	@cmake -S . -B build -G Ninja
